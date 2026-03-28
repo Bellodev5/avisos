@@ -3,9 +3,7 @@ const { Pool } = pkg;
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_URL?.includes('sslmode=disable')
-    ? false
-    : { rejectUnauthorized: false }
+  ssl: false  // Postgres próprio no VPS sem SSL
 });
 
 async function ensureTable(client) {
@@ -21,15 +19,15 @@ async function ensureTable(client) {
 
 export default async function handler(req, res) {
   if (!process.env.DATABASE_URL) {
-    return res.status(500).json({ error: 'DATABASE_URL nao configurada nas variaveis de ambiente do Vercel' });
+    return res.status(500).json({ error: 'DATABASE_URL nao configurada' });
   }
 
   let client;
   try {
     client = await pool.connect();
   } catch (err) {
-    console.error('Erro ao conectar no banco:', err.message);
-    return res.status(500).json({ error: `Falha na conexao com o banco: ${err.message}` });
+    console.error('Erro conexao:', err.message);
+    return res.status(500).json({ error: `Falha na conexao: ${err.message}` });
   }
 
   try {
@@ -64,7 +62,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
 
   } catch (err) {
-    console.error('Erro na query:', err.message);
+    console.error('Erro query:', err.message);
     return res.status(500).json({ error: err.message });
   } finally {
     client.release();
