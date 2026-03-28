@@ -3,7 +3,7 @@ const { Pool } = pkg;
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: false  // Postgres próprio no VPS sem SSL
+  ssl: { rejectUnauthorized: false }  // Neon exige SSL
 });
 
 async function ensureTable(client) {
