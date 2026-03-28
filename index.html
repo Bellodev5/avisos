@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema de Avisos</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0a;
+    --surface: #111;
+    --border: #1f1f1f;
+    --accent: #ff4400;
+    --accent2: #ffaa00;
+    --text: #f0f0f0;
+    --muted: #666;
+    --green: #00cc66;
+    --red: #ff2244;
+  }
+
+  body { font-family: 'Barlow', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* NAV */
+  .nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 24px; height: 56px;
+    background: rgba(10,10,10,.97); border-bottom: 1px solid var(--border);
+  }
+  .nav-logo { font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: 18px; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); }
+  .nav-tabs { display: flex; gap: 4px; }
+  .nav-tab {
+    padding: 6px 18px; border: 1px solid transparent; border-radius: 4px;
+    background: transparent; color: var(--muted);
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 600; font-size: 13px; letter-spacing: 1px; text-transform: uppercase;
+    cursor: pointer; transition: all .15s;
+  }
+  .nav-tab:hover { color: var(--text); border-color: var(--border); }
+  .nav-tab.active { color: var(--accent); border-color: var(--accent); background: rgba(255,68,0,.08); }
+
+  /* PAGES */
+  .page { display: none; padding-top: 56px; min-height: 100vh; }
+  .page.active { display: block; }
+  #page-display { display: none; align-items: center; justify-content: center; }
+  #page-display.active { display: flex; }
+
+  /* ADMIN */
+  .admin-wrap { max-width: 560px; margin: 0 auto; padding: 52px 24px; }
+  .admin-title { font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: 42px; letter-spacing: -1px; line-height: 1; margin-bottom: 6px; }
+  .admin-title span { color: var(--accent); }
+  .admin-sub { color: var(--muted); font-size: 14px; margin-bottom: 44px; }
+
+  .field-group { margin-bottom: 22px; }
+  label { display: block; font-family: 'Barlow Condensed', sans-serif; font-weight: 600; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+
+  input[type="text"] {
+    width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
+    color: var(--text); font-family: 'Barlow', sans-serif; font-size: 16px; padding: 14px 16px; outline: none; transition: border-color .15s;
+  }
+  input[type="text"]:focus { border-color: var(--accent); }
+
+  .sev-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .sev-btn {
+    padding: 14px; border-radius: 6px; border: 2px solid var(--border); background: transparent;
+    color: var(--muted); font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 15px;
+    letter-spacing: 1.5px; text-transform: uppercase; cursor: pointer; transition: all .15s; text-align: center;
+  }
+  .sev-btn:hover { color: var(--text); }
+  .sev-btn.sel-atencao { border-color: var(--accent2); color: var(--accent2); background: rgba(255,170,0,.08); }
+  .sev-btn.sel-urgente  { border-color: var(--red);    color: var(--red);    background: rgba(255,34,68,.08); }
+
+  .btn-send {
+    width: 100%; padding: 17px; margin-top: 6px;
+    background: var(--accent); border: none; border-radius: 6px;
+    color: #fff; font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: 16px; letter-spacing: 3px; text-transform: uppercase;
+    cursor: pointer; transition: all .15s;
+  }
+  .btn-send:hover { background: #e03a00; transform: translateY(-1px); }
+  .btn-send:active { transform: none; }
+
+  .btn-clear {
+    width: 100%; padding: 13px; margin-top: 10px;
+    background: transparent; border: 1px solid var(--border); border-radius: 6px;
+    color: var(--muted); font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 14px; letter-spacing: 2px; text-transform: uppercase;
+    cursor: pointer; transition: all .15s;
+  }
+  .btn-clear:hover { border-color: var(--red); color: var(--red); background: rgba(255,34,68,.06); }
+  .history-title {
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 12px;
+    letter-spacing: 2px; text-transform: uppercase; color: var(--muted);
+    margin: 44px 0 16px; display: flex; align-items: center; gap: 10px;
+  }
+  .history-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .history-list { display: flex; flex-direction: column; gap: 8px; }
+  .history-item {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
+    padding: 14px 16px; display: flex; align-items: center; gap: 12px; position: relative;
+  }
+  .history-item.latest { border-color: var(--accent); }
+  .hi-badge {
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 10px;
+    letter-spacing: 1.5px; text-transform: uppercase; padding: 3px 9px; border-radius: 3px; flex-shrink: 0;
+  }
+  .badge-atencao { background: rgba(255,170,0,.15); color: var(--accent2); }
+  .badge-urgente  { background: rgba(255,34,68,.15);  color: var(--red); }
+  .hi-titulo { font-weight: 600; font-size: 14px; flex: 1; }
+  .hi-time { font-size: 11px; color: #444; flex-shrink: 0; }
+  .latest-pill {
+    position: absolute; top: -8px; right: 12px;
+    background: var(--accent); color: #fff;
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase;
+    padding: 2px 8px; border-radius: 20px;
+  }
+  .empty-hist { text-align: center; color: var(--muted); font-size: 13px; padding: 24px; }
+
+  /* TOAST */
+  .toast {
+    position: fixed; bottom: 24px; right: 24px;
+    background: var(--green); color: #000;
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 14px; letter-spacing: 1px;
+    padding: 12px 22px; border-radius: 6px;
+    transform: translateY(80px); opacity: 0; transition: all .3s cubic-bezier(.34,1.56,.64,1); z-index: 999;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+
+  /* DISPLAY PAGE */
+  .display-bg {
+    position: fixed; inset: 0; z-index: 0; transition: background .6s;
+  }
+  .display-bg.atencao { background: radial-gradient(ellipse at center, rgba(255,170,0,.18) 0%, #0d0800 65%); }
+  .display-bg.urgente  { background: radial-gradient(ellipse at center, rgba(255,34,68,.22)  0%, #100005 65%); }
+  .display-bg.empty    { background: radial-gradient(ellipse at center, rgba(255,68,0,.05)   0%, #0a0a0a 65%); }
+  .display-bg::after {
+    content: ''; position: absolute; inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,.03) 2px, rgba(0,0,0,.03) 4px);
+  }
+
+  .display-inner {
+    position: relative; z-index: 1;
+    width: 100%; max-width: 960px; padding: 48px 40px; text-align: center;
+  }
+
+  .display-empty { opacity: .25; }
+  .display-empty-icon { font-size: 64px; margin-bottom: 16px; }
+  .display-empty-text {
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 700;
+    font-size: 22px; letter-spacing: 5px; text-transform: uppercase;
+  }
+
+  .display-notice { animation: noticeIn .5s cubic-bezier(.34,1.2,.64,1) both; }
+  @keyframes noticeIn { from { opacity: 0; transform: scale(.93) translateY(24px); } to { opacity: 1; transform: none; } }
+
+  .display-sev-label {
+    display: inline-block;
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 900;
+    font-size: 14px; letter-spacing: 5px; text-transform: uppercase;
+    padding: 6px 22px; border-radius: 3px; margin-bottom: 32px;
+    border: 1px solid currentColor;
+  }
+  .sev-atencao .display-sev-label { color: var(--accent2); background: rgba(255,170,0,.1); }
+  .sev-urgente  .display-sev-label { color: var(--red);    background: rgba(255,34,68,.1); }
+
+  .display-titulo {
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 900;
+    font-size: clamp(52px, 9vw, 110px); line-height: 1.05; letter-spacing: -2px; text-transform: uppercase;
+    color: #fff; margin-bottom: 36px;
+  }
+
+  .display-divider { width: 60px; height: 4px; border-radius: 2px; margin: 0 auto 32px; }
+  .sev-atencao .display-divider { background: var(--accent2); }
+  .sev-urgente  .display-divider { background: var(--red); }
+
+  .display-meta {
+    display: flex; align-items: center; justify-content: center; gap: 14px;
+    font-family: 'Barlow Condensed', sans-serif; font-size: 13px;
+    letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,.2);
+  }
+  .display-meta-dot { width: 4px; height: 4px; border-radius: 50%; background: currentColor; }
+
+  /* urgente pulse */
+  .pulse-ring { display: none; position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+  .sev-urgente .pulse-ring { display: block; }
+  .pulse-ring::before, .pulse-ring::after {
+    content: ''; position: absolute; inset: -30px;
+    border: 2px solid rgba(255,34,68,.35);
+    animation: pulseRing 2s ease-out infinite;
+  }
+  .pulse-ring::after { animation-delay: 1s; }
+  @keyframes pulseRing { 0% { opacity: .6; transform: scale(.97); } 100% { opacity: 0; transform: scale(1.04); } }
+
+  /* live dot */
+  .live-dot {
+    position: fixed; bottom: 20px; right: 20px;
+    width: 9px; height: 9px; border-radius: 50%; background: var(--green); z-index: 10;
+    animation: breathe 2s ease-in-out infinite;
+  }
+  @keyframes breathe { 0%,100% { opacity: 1; } 50% { opacity: .25; } }
+
+  /* progress bar */
+  .time-bar { position: fixed; bottom: 0; left: 0; right: 0; height: 3px; background: rgba(255,255,255,.06); z-index: 10; }
+  .time-fill { height: 100%; background: rgba(255,255,255,.15); animation: timeFill 5s linear infinite; }
+  @keyframes timeFill { from { width: 0; } to { width: 100%; } }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-logo">⚡ Avisos</div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="setPage('admin')">Disparar Aviso</button>
+    <button class="nav-tab" onclick="setPage('display')">Tela de Exibição</button>
+  </div>
+</nav>
+
+<!-- ADMIN -->
+<div class="page active" id="page-admin">
+  <div class="admin-wrap">
+    <h1 class="admin-title">Disparar <span>Aviso</span></h1>
+    <p class="admin-sub">O aviso aparece imediatamente na tela de exibição.</p>
+
+    <div class="field-group">
+      <label>Nível de urgência</label>
+      <div class="sev-row">
+        <button class="sev-btn sel-atencao" id="btnAtencao" onclick="selectSev('atencao', this)">⚠ Atenção</button>
+        <button class="sev-btn" id="btnUrgente" onclick="selectSev('urgente', this)">🚨 Urgente</button>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label>Título do aviso</label>
+      <input type="text" id="titulo" placeholder="Ex: Reunião em 5 minutos" maxlength="80"
+             onkeydown="if(event.key==='Enter') enviarAviso()" />
+    </div>
+
+    <button class="btn-send" onclick="enviarAviso()">⚡ Disparar Aviso</button>
+    <button class="btn-clear" onclick="limparAviso()">✕ Limpar Aviso Atual</button>
+
+    <div class="history-title">AVISOS</div>
+    <div class="history-list" id="historyList">
+      <p class="empty-hist">Dispare os avisos necessários.</p>
+    </div>
+  </div>
+</div>
+
+<!-- DISPLAY -->
+<div class="page" id="page-display">
+  <div class="display-bg empty" id="displayBg"></div>
+
+  <div class="display-inner" id="displayInner">
+    <div class="display-empty" id="displayEmpty">
+      <div class="display-empty-icon">📢</div>
+      <div class="display-empty-text">Aguardando Avisos</div>
+    </div>
+
+    <div class="display-notice" id="displayNotice" style="display:none">
+      <div class="display-sev-label" id="displaySevLabel"></div>
+      <div class="display-titulo" id="displayTitulo"></div>
+      <div class="display-divider"></div>
+      <div class="display-meta">
+        <span id="displayTime"></span>
+        <span class="display-meta-dot"></span>
+        <span>Ao vivo</span>
+      </div>
+    </div>
+
+    <div class="pulse-ring"></div>
+  </div>
+
+  <div class="live-dot"></div>
+  <div class="time-bar"><div class="time-fill"></div></div>
+</div>
+
+<div class="toast" id="toast">✓ Aviso disparado!</div>
+
+<script>
+  const STORAGE_KEY = 'avisos_v1';
+  const MAX_HIST = 10;
+  let currentSev = 'atencao';
+  let lastKnownId = null;
+  let refreshTimer = null;
+
+  function loadData() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || { avisos: [] }; }
+    catch { return { avisos: [] }; }
+  }
+  function saveData(d) { localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); }
+
+  function setPage(p) {
+    document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
+    document.getElementById('page-' + p).classList.add('active');
+    document.querySelectorAll('.nav-tab')[p === 'admin' ? 0 : 1].classList.add('active');
+    clearInterval(refreshTimer);
+    if (p === 'display') { renderDisplay(); refreshTimer = setInterval(renderDisplay, 4000); }
+    else renderHistory();
+  }
+
+  function selectSev(sev, btn) {
+    currentSev = sev;
+    document.querySelectorAll('.sev-btn').forEach(b => b.className = 'sev-btn');
+    btn.classList.add('sel-' + sev);
+  }
+
+  function enviarAviso() {
+    const el = document.getElementById('titulo');
+    const titulo = el.value.trim();
+    if (!titulo) {
+      el.style.borderColor = 'var(--red)';
+      el.focus();
+      setTimeout(() => el.style.borderColor = '', 1500);
+      return;
+    }
+    const data = loadData();
+    data.avisos.unshift({ id: Date.now(), titulo, severidade: currentSev, timestamp: new Date().toISOString() });
+    if (data.avisos.length > MAX_HIST) data.avisos.length = MAX_HIST;
+    saveData(data);
+    el.value = '';
+    showToast();
+    renderHistory();
+  }
+
+  function limparAviso() {
+    const data = loadData();
+    if (!data.avisos.length) return;
+    data.avisos = [];
+    saveData(data);
+    lastKnownId = null;
+    renderHistory();
+  }
+
+  function renderHistory() {
+    const { avisos } = loadData();
+    const list = document.getElementById('historyList');
+    if (!avisos.length) { list.innerHTML = '<p class="empty-hist">Dispare os avisos necessários.</p>'; return; }
+    const labels = { atencao: 'Atenção', urgente: 'Urgente' };
+    list.innerHTML = avisos.map((a, i) => {
+      const t = new Date(a.timestamp).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+      return `<div class="history-item ${i===0?'latest':''}">
+        ${i===0?'<span class="latest-pill">ATUAL</span>':''}
+        <span class="hi-badge badge-${a.severidade}">${labels[a.severidade]}</span>
+        <span class="hi-titulo">${esc(a.titulo)}</span>
+        <span class="hi-time">${t}</span>
+      </div>`;
+    }).join('');
+  }
+
+  function renderDisplay() {
+    const { avisos } = loadData();
+    const bg     = document.getElementById('displayBg');
+    const inner  = document.getElementById('displayInner');
+    const empty  = document.getElementById('displayEmpty');
+    const notice = document.getElementById('displayNotice');
+
+    if (!avisos.length) {
+      bg.className = 'display-bg empty';
+      inner.className = 'display-inner';
+      empty.style.display = '';
+      notice.style.display = 'none';
+      return;
+    }
+
+    const a = avisos[0];
+    empty.style.display = 'none';
+
+    if (a.id !== lastKnownId) {
+      lastKnownId = a.id;
+      notice.style.display = 'none';
+      void notice.offsetWidth;
+      notice.style.display = '';
+    } else {
+      notice.style.display = '';
+    }
+
+    bg.className    = `display-bg ${a.severidade}`;
+    inner.className = `display-inner sev-${a.severidade}`;
+
+    const labels = { atencao: '⚠ Atenção', urgente: '🚨 Urgente' };
+    document.getElementById('displaySevLabel').textContent = labels[a.severidade];
+    document.getElementById('displayTitulo').textContent   = a.titulo;
+    document.getElementById('displayTime').textContent     =
+      new Date(a.timestamp).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+  }
+
+  function showToast() {
+    const t = document.getElementById('toast');
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2600);
+  }
+
+  function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  renderHistory();
+</script>
+</body>
+</html>
