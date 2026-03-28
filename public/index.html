@@ -416,9 +416,13 @@
 
   function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-  // init
-  checkStatus();
-  renderHistory();
+  // init — se URL tiver ?exibicao, abre direto na tela de exibicao e fica atualizando
+  if (new URLSearchParams(window.location.search).has('exibicao')) {
+    setPage('display');
+  } else {
+    checkStatus();
+    renderHistory();
+  }
 </script>
 </body>
 </html>
